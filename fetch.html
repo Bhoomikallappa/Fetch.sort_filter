@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Repositories</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      cursor: pointer;
+    }
+    input {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Google Repositories</h1>
+  
+  <input type="text" id="searchInput" placeholder="Search by name..." oninput="searchTable()">
+  
+  <table id="repoTable">
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">Name</th>
+        <th onclick="sortTable(1)">Language</th>
+        <th>Git URL</th>
+        <th onclick="sortTable(3)">Updated At</th>
+      </tr>
+    </thead>
+    <tbody id="repoBody">
+      
+    </tbody>
+  </table>
+
+  <script>
+    async function fetchRepos() {
+      const response = await fetch('https://api.github.com/orgs/google/repos');
+      const repos = await response.json();
+      const tableBody = document.getElementById('repoBody');
+
+      repos.forEach(repo => {
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+          <td>${repo.name}</td>
+          <td>${repo.language || 'N/A'}</td>
+          <td><a href="${repo.git_url}" target="_blank">${repo.git_url}</a></td>
+          <td>${new Date(repo.updated_at).toLocaleString()}</td>
+        `;
+
+        tableBody.appendChild(row);
+      });
+    }
+
+    function sortTable(n) {
+      const table = document.getElementById("repoTable");
+      let rows, switching, i, x, y, shouldSwitch, direction, switchcount = 0;
+      switching = true;
+      direction = "asc"; 
+      
+      while (switching) {
+        switching = false;
+        rows = table.rows;
+
+        for (i = 1; i < (rows.length - 1); i++) {
+          shouldSwitch = false;
+          x = rows[i].getElementsByTagName("TD")[n];
+          y = rows[i + 1].getElementsByTagName("TD")[n];
+
+          if (direction == "asc") {
+            if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+              shouldSwitch = true;
+              break;
+            }
+          } else if (direction == "desc") {
+            if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+              shouldSwitch = true;
+              break;
+            }
+          }
+        }
+        
+        if (shouldSwitch) {
+          rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+          switching = true;
+          switchcount++;
+        } else {
+          if (switchcount == 0 && direction == "asc") {
+            direction = "desc";
+            switching = true;
+          }
+        }
+      }
+    }
+
+  
+    function searchTable() {
+      const input = document.getElementById('searchInput');
+      const filter = input.value.toLowerCase();
+      const rows = document.getElementById('repoBody').getElementsByTagName('tr');
+
+      for (let i = 0; i < rows.length; i++) {
+        const nameCell = rows[i].getElementsByTagName('td')[0];
+        if (nameCell) {
+          const txtValue = nameCell.textContent || nameCell.innerText;
+          if (txtValue.toLowerCase().indexOf(filter) > -1) {
+            rows[i].style.display = "";
+          } else {
+            rows[i].style.display = "none";
+          }
+        }       
+      }
+    }
+
+  
+    window.onload = fetchRepos;
+  </script>
+
+</body>
+</html>
